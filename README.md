@@ -5,4 +5,4 @@
 
 ---
 
-This repository contains the all the code, data, and output files you need to complete [Project 1: Anti-Human Trafficking NGOs and the United States](https://storiesf17.classes.andrewheiss.com/assignment/01-project/)
+This repository contains the all the code, data, and output files you need to complete [Project 1: Anti-Human Trafficking NGOs and the United States](https://storiesf17.classes.andrewheiss.com/assignment/01-project/).
