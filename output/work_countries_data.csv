@@ -1,0 +1,132 @@
+country,iso_a3,ngos_working
+India,IND,39
+Nigeria,NGA,33
+United Kingdom of Great Britain and Northern Ireland,GBR,21
+Nepal,NPL,18
+Philippines,PHL,15
+Thailand,THA,15
+Canada,CAN,14
+Ghana,GHA,12
+Cambodia,KHM,12
+Mexico,MEX,10
+Germany,DEU,9
+Kenya,KEN,9
+Republic of Moldova,MDA,8
+Romania,ROU,8
+Australia,AUS,7
+Bangladesh,BGD,7
+Spain,ESP,7
+Guatemala,GTM,7
+Italy,ITA,7
+Pakistan,PAK,7
+Viet Nam,VNM,7
+South Africa,ZAF,7
+Benin,BEN,6
+Bosnia and Herzegovina,BIH,6
+Brazil,BRA,6
+Cameroon,CMR,6
+Democratic Republic of the Congo,COD,6
+Indonesia,IDN,6
+Netherlands,NLD,6
+Albania,ALB,5
+Armenia,ARM,5
+Colombia,COL,5
+Costa Rica,CRI,5
+France,FRA,5
+Ireland,IRL,5
+Israel,ISR,5
+Jordan,JOR,5
+New Zealand,NZL,5
+Serbia,SRB,5
+Uganda,UGA,5
+Argentina,ARG,4
+Belgium,BEL,4
+Georgia,GEO,4
+Hong Kong,HKG,4
+Iraq,IRQ,4
+Kazakhstan,KAZ,4
+Kyrgyzstan,KGZ,4
+Lebanon,LBN,4
+Mongolia,MNG,4
+Malaysia,MYS,4
+Poland,POL,4
+Russian Federation,RUS,4
+Turkey,TUR,4
+Ukraine,UKR,4
+Afghanistan,AFG,3
+Belarus,BLR,3
+Switzerland,CHE,3
+Cyprus,CYP,3
+Denmark,DNK,3
+Ecuador,ECU,3
+Estonia,EST,3
+Greece,GRC,3
+Iceland,ISL,3
+Lao People's Democratic Republic,LAO,3
+Nicaragua,NIC,3
+Norway,NOR,3
+Singapore,SGP,3
+United Republic of Tanzania,TZA,3
+Uzbekistan,UZB,3
+United Arab Emirates,ARE,2
+Burundi,BDI,2
+Bulgaria,BGR,2
+Chile,CHL,2
+Ethiopia,ETH,2
+Finland,FIN,2
+Guinea,GIN,2
+Gambia (Islamic Republic of the),GMB,2
+Haiti,HTI,2
+Liberia,LBR,2
+Sri Lanka,LKA,2
+Lithuania,LTU,2
+The former Yugoslav Republic of Macedonia,MKD,2
+Myanmar,MMR,2
+Mozambique,MOZ,2
+Malawi,MWI,2
+Paraguay,PRY,2
+Slovakia,SVK,2
+Togo,TGO,2
+Austria,AUT,1
+Burkina Faso,BFA,1
+Bahrain,BHR,1
+Belize,BLZ,1
+Bolivia (Plurinational State of),BOL,1
+Barbados,BRB,1
+Central African Republic,CAF,1
+China,CHN,1
+Côte D'Ivoire,CIV,1
+Czech Republic,CZE,1
+Dominican Republic,DOM,1
+Egypt,EGY,1
+Gabon,GAB,1
+Honduras,HND,1
+Croatia,HRV,1
+Hungary,HUN,1
+Iran (Islamic Republic of),IRN,1
+Japan,JPN,1
+Republic of Korea,KOR,1
+Kuwait,KWT,1
+Libya,LBY,1
+Lesotho,LSO,1
+Luxembourg,LUX,1
+Latvia,LVA,1
+Macao,MAC,1
+Morocco,MAR,1
+Mali,MLI,1
+Malta,MLT,1
+Montenegro,MNE,1
+Niger,NER,1
+Panama,PAN,1
+Peru,PER,1
+Democratic People's Republic of Korea,PRK,1
+Portugal,PRT,1
+Sudan,SDN,1
+Sierra Leone,SLE,1
+El Salvador,SLV,1
+Slovenia,SVN,1
+Sweden,SWE,1
+Tajikistan,TJK,1
+Trinidad and Tobago,TTO,1
+"Taiwan, Province of China",TWN,1
+Yemen,YEM,1

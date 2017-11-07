@@ -1,0 +1,368 @@
+---
+title: "Anti-Human Trafficking NGOs and the United States"
+date: "2017-11-07"
+mainfont: "Source Sans Pro"
+urlcolor: "red"
+output: 
+  pdf_document: 
+    dev: cairo_pdf
+    highlight: zenburn
+    latex_engine: xelatex
+    toc: yes
+---
+
+# Load libraries and data
+
+The human trafficking survey data comes from Andrew Heiss and Judith G. Kelley, "From the Trenches: A Global Survey of Anti-TIP NGOs and their Views of US Efforts," *Journal of Human Trafficking* 3 (2017), [doi:10.1080/23322705.2016.1199241](https://dx.doi.org/10.1080/23322705.2016.1199241) and is downloadable at <https://www.scorecarddiplomacy.org/survey/data/>.
+
+The world shapefiles come from the Natural Earth project: <http://www.naturalearthdata.com/>.
+
+For the mapping to work correctly, you must install a few additional packages and pieces of software. Visit <https://datavizf17.classes.andrewheiss.com/assignment/07-assignment/#task-2-make-a-map> for detailed instructions if you're feeling brave.
+
+```{r load-libraries-data, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(forcats)
+library(countrycode)
+library(sf)
+
+ngo_responses <- read_csv("data/responses_full_anonymized.csv")
+
+world_shapes <- st_read("data/ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp",
+                        stringsAsFactors = FALSE, quiet = TRUE)
+```
+
+
+# Map where NGOs work
+
+NGOs responding to the survey could respond about their work in up to five different countries. This map shows where they worked, with a ceiling of 10.
+
+This generates the following files:
+
+- `output/work_countries.pdf`
+- `output/work_countries_data.csv`
+- `output/work_countries_caption.txt`
+
+```{r plot-ngo-countries, fig.width=7.5, fig.height=5}
+work_countries_freq <- ngo_responses %>%
+  select(Q3.2, work.country) %>%
+  # Kosovo has issues mapping, and "Global" isn't really a country, so get 
+  # rid of those for now
+  filter(!(work.country %in% c("Kosovo", "Global"))) %>%
+  mutate(iso_a3 = countrycode(work.country, "country.name", "iso3c")) %>%
+  group_by(iso_a3) %>%
+  summarize(ngos_working = n()) %>%
+  arrange(desc(ngos_working)) %>%
+  mutate(ngos_working_ceiling = ifelse(ngos_working > 10, 10, ngos_working))
+
+# Save aggregated data
+work_countries_freq %>%
+  mutate(country = countrycode(iso_a3, "iso3c", "country.name")) %>%
+  select(country, iso_a3, ngos_working) %>%
+  write_csv("output/work_countries_data.csv")
+
+# Plot data on a map
+# left_join takes two data frames and combines them, based on a shared column
+# (in this case iso_a3)
+ngos_map_data <- world_shapes %>%
+  left_join(work_countries_freq, by = "iso_a3") %>%
+  filter(iso_a3 != "ATA")  # No human trafficking in Antarctica
+
+ngos_map <- ggplot(ngos_map_data) +
+  geom_sf(aes(fill = ngos_working_ceiling), color = NA) +
+  coord_sf(crs = st_crs(54030)) +  # Use a Robinson projection
+  scale_fill_gradient(low = "#fee0d2", high = "#de2d26", na.value = "grey85",
+                      breaks = seq(from = 0, to = 10, by = 2),
+                      labels = c(0, 2, 4, 5, 8, "10+")) + 
+  guides(fill = guide_colorbar(title.position = "top", 
+                               title.hjust = "0.5",
+                               title = "NGOs working in country",
+                               barwidth = 10, barheight = 0.5)) +
+  theme_void() + 
+  theme(legend.position = "bottom",
+        panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))
+
+# Save PDF
+ggsave(ngos_map, filename = "output/work_countries.pdf",
+       width = 7.5, height = 5, units = "in", bg = "transparent", device = cairo_pdf)
+
+# Save caption
+caption <- "Countries where NGOs reported advocacy work"
+cat(caption, file = "output/work_countries_caption.txt")
+
+ngos_map
+```
+
+
+# US activity in TIP
+
+NGOs were asked if the US has been active the fight against human trafficking in the countries they work in.
+
+This generates the following files:
+
+- `output/us_activity.pdf`
+- `output/us_activity_data.csv`
+- `output/us_activity_caption.txt`
+
+```{r plot-us-active, fig.width=7.5, fig.height=2.5}
+us_active_data <- ngo_responses %>%
+  filter(!is.na(Q3.8)) %>%
+  count(Q3.8) %>%
+  mutate(percent = n / sum(n)) %>%
+  mutate(Q3.8 = factor(Q3.8, levels = c("Don't know", "Yes", "No"), ordered = TRUE))
+
+# Save aggregated data
+us_active_data %>%
+  write_csv("output/us_activity_data.csv")
+  
+us_active_plot <- ggplot(us_active_data, aes(x = Q3.8, y = percent)) +
+  geom_col(fill = "#de2d26") + 
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = NULL) +
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+# Save PDF
+ggsave(us_active_plot, filename = "output/us_activity.pdf",
+       width = 7.5, height = 2.5, units = "in", bg = "transparent", device = cairo_pdf)
+
+# Save caption
+caption <- paste("Responses to “Over the last 10–15 years, has the United States", 
+                 "or its embassy been active in the fight against human", 
+                 "trafficking in (country X)?”")
+cat(caption, file = "output/us_activity_caption.txt")
+
+us_active_plot
+```
+
+
+# Table of US involvement in anti-trafficking work
+
+NGOs were asked how the US has been involved in anti-trafficking work in the countries the NGOs work in. Respondents were allowed to select multiple actvities. Because some did not answer the question (either because of nonresponse or because the US isn't involved), we calculate the denominator based on the number of NGOs that selected at least one activity.
+
+This generates the following files:
+
+- `output/us_involvement_table.csv`
+- `output/us_involvement_denominator.txt`
+- `output/us_involvement_caption.txt`
+
+```{r table-us-involvement, warning=FALSE, results="asis"}
+us_involvement_questions <- tribble(
+  ~question, ~label,
+  "Q3.9_1", "Asking for legislation",
+  "Q3.9_2", "Convening conferences or workshops",
+  "Q3.9_3", "Raising awareness",
+  "Q3.9_4", "Providing resources or funding",
+  "Q3.9_5", "Increasing government attention",
+  "Q3.9_6", "Training government officials",
+  "Q3.9_7", "Contributing to a government action plan",
+  "Q3.9_8", "Other",
+  "Q3.9_9", "Don't know",
+  "Q3.9_10", "The US has not been involved in trafficking issues"
+)
+
+us_involvement_denominator <- ngo_responses %>%
+  select(one_of(us_involvement_questions$question)) %>%
+  mutate(num_answered = rowSums(., na.rm = TRUE)) %>%
+  filter(num_answered > 0) %>%
+  nrow()
+
+cat(us_involvement_denominator, file = "output/us_involvement_denominator.txt")
+
+us_involvement <- ngo_responses %>%
+  select(clean.id, one_of(us_involvement_questions$question)) %>%
+  gather(question, value, -clean.id) %>%
+  left_join(us_involvement_questions, by = "question") %>%
+  mutate(Answer = fct_inorder(label, ordered = TRUE)) %>%
+  group_by(Answer) %>%
+  summarize(Responses = sum(value, na.rm=TRUE), 
+            Percent = Responses / us_involvement_denominator)
+
+total_row <- tribble(
+  ~Answer, ~Responses, ~Percent,
+  "Total", us_involvement_denominator, NA
+)
+
+us_involvement_total <- bind_rows(us_involvement, total_row)
+
+# Save as CSV
+write_csv(us_involvement_total, "output/us_involvement_table.csv")
+
+# Save caption
+caption <- paste("Responses to “Has the United States or its embassy been", 
+                 "involved in any of the following activities in (country X)?”")
+cat(caption, file = "output/us_involvement_caption.txt")
+
+# Show table
+pander::pandoc.table(us_involvement_total, justify = "lcc", missing = "")
+```
+
+
+# Type of collaboration between the US and NGOs
+
+NGOs were asked about how the State Department or local embassy has worked with them specifically in the countries they work in. Respondents were allowed to select multiple actvities. Because some did not answer the question (either because of nonresponse or because the US isn't involved), we calculate the denominator based on the number of NGOs that selected at least one activity.
+
+This generates the following files:
+
+- `output/us_work.pdf`
+- `output/us_work_data.csv`
+- `output/us_work_denominator.txt`
+- `output/us_work_caption.txt`
+
+```{r plot-us-ngo-work, fig.width=7.5, fig.height=3}
+us_work_questions <- tribble(
+  ~question, ~label,
+  "Q3.18_1", "Direct contact (meetings)",
+  "Q3.18_2", "Direct cooperation",
+  "Q3.18_3", "Received funding",
+  "Q3.18_4", "Other",
+  "Q3.18_5", "We have not had any contact\nor funding from the US",
+  "Q3.18_6", "Don't know"
+)
+
+us_work_denominator <- ngo_responses %>%
+  select(one_of(us_work_questions$question)) %>%
+  mutate(num_answered = rowSums(., na.rm = TRUE)) %>%
+  filter(num_answered > 0) %>%
+  nrow()
+
+cat(us_work_denominator, file = "output/us_work_denominator.txt")
+
+us_work_data <- ngo_responses %>%
+  select(clean.id, one_of(us_work_questions$question)) %>%
+  gather(question, value, -clean.id) %>%
+  left_join(us_work_questions, by = "question") %>%
+  mutate(Answer = fct_inorder(label, ordered = TRUE)) %>%
+  group_by(Answer) %>%
+  summarize(Responses = sum(value, na.rm=TRUE), 
+            Percent = Responses / us_work_denominator)
+
+# Save aggregated data
+us_work_data %>%
+  write_csv("output/us_work_data.csv")
+
+us_work_plot <- ggplot(us_work_data, aes(x = fct_rev(Answer), y = Percent)) +
+  geom_col(fill = "#de2d26") + 
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = NULL) +
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+# Save PDF
+ggsave(us_work_plot, filename = "output/us_work.pdf",
+       width = 7.5, height = 3, units = "in", bg = "transparent", device = cairo_pdf)
+
+# Save caption
+caption <- paste("Responses to “Over the last 10–15 years, has your organization", 
+                 "worked directly with or had direct contact with the US embassy", 
+                 "or government on human trafficking issues?”")
+cat(caption, file = "output/us_work_caption.txt")
+
+us_work_plot
+```
+
+
+# US importance
+
+NGOs were asked how important the US has been in the fight against human trafficking in the countries they work in.
+
+This generates the following files:
+
+- `output/us_importance.pdf`
+- `output/us_importance_data.csv`
+- `output/us_importance_caption.txt`
+
+```{r plot-us-importance, fig.width=7.5, fig.height=2.5}
+us_important_data <- ngo_responses %>%
+  filter(!is.na(Q3.19)) %>%
+  count(Q3.19) %>%
+  mutate(percent = n / sum(n)) %>%
+  mutate(Q3.19 = factor(Q3.19, 
+                        levels = c("Most important actor", 
+                                   "Somewhat important actor",
+                                   "Not an important actor",
+                                   "Don't know"), 
+                        ordered = TRUE))
+
+# Save aggregated data
+us_important_data %>%
+  write_csv("output/us_importance_data.csv")
+  
+us_importance_plot <- ggplot(us_important_data, aes(x = fct_rev(Q3.19), y = percent)) +
+  geom_col(fill = "#de2d26") + 
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = NULL) +
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+# Save PDF
+ggsave(us_importance_plot, filename = "output/us_importance.pdf",
+       width = 7.5, height = 2.5, units = "in", bg = "transparent", device = cairo_pdf)
+
+# Save caption
+caption <- paste("Responses to “Overall, how important a role would you say that", 
+                 "the United States or its embassy have played in fighting", 
+                 "trafficking in (country X) over the last 10–15 years?”")
+cat(caption, file = "output/us_importance_caption.txt")
+
+us_importance_plot
+```
+
+
+# US positivity
+
+NGOs were asked how positive a role the US has played in the fight against human trafficking in the countries they work in.
+
+This generates the following files:
+
+- `output/us_positivity.pdf`
+- `output/us_positivity_data.csv`
+- `output/us_positivity_caption.txt`
+
+```{r plot-us-positivity, fig.width=7.5, fig.height=2.5}
+us_positive_data <- ngo_responses %>%
+  filter(!is.na(Q3.25)) %>%
+  count(Q3.25) %>%
+  mutate(percent = n / sum(n)) %>%
+  mutate(Q3.25 = factor(Q3.25, 
+                        levels = c("Positive", "Mixed", "Negative", "Don't know"), 
+                        ordered = TRUE))
+
+# Save aggregated data
+us_positive_data %>%
+  write_csv("output/us_positivity_data.csv")
+  
+us_positive_plot <- ggplot(us_positive_data, aes(x = fct_rev(Q3.25), y = percent)) +
+  geom_col(fill = "#de2d26") + 
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = NULL) +
+  coord_flip() +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+# Save PDF
+ggsave(us_positive_plot, filename = "output/us_positivity.pdf",
+       width = 7.5, height = 2.5, units = "in", bg = "transparent", device = cairo_pdf)
+
+# Save caption
+caption <- paste("Responses to “Overall, has the US influence on human trafficking", 
+                 "policy in (country X) been positive or negative?”")
+cat(caption, file = "output/us_positivity_caption.txt")
+
+us_positive_plot
+```
